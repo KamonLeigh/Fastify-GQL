@@ -17,6 +17,7 @@ module.exports = `
 
   type Query {
     family(id: ID!): Family
+    person(id: ID!): Person
   }
 
   type Mutation {
