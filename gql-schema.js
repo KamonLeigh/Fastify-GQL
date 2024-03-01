@@ -22,6 +22,7 @@ module.exports = `
 
   type Mutation {
    changeNickName(id: ID!, nickName: String!): Person
+   addToFamily(id: ID!, nickName: String, name: String!): Person
   }
 
   type Subscription {

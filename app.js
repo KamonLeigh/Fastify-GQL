@@ -41,6 +41,18 @@ const resolvers = {
       context.reply.log.debug({ person }, "Read updated person");
       return person;
     },
+    addToFamily: async function addToFamily(parent, args, context, info) {
+      const sql = SQL`INSERT INTO Person (familyId, name, nick) VALUES(${args.id}, ${args.name}, ${args.nickName})`;
+      const { lastID, change } = await context.app.sqlite.run(sql);
+
+      console.log(change);
+
+      const sqlTwo = SQL`SELECT * FROM Person WHERE id = ${lastID}`;
+      const person = context.app.sqlite.get(sqlTwo);
+      context.reply.log.debug({ person }, "Read updated person");
+
+      return person;
+    },
   },
   Family: {
     members: async function membersFunc(parent, args, context, info) {
@@ -76,6 +88,7 @@ async function run() {
   const app = Fastify({ logger: { level: "debug" } });
 
   await app.register(require("fastify-sqlite"), {
+    verbose: true,
     promiseApi: true,
   });
 
