@@ -2,21 +2,12 @@ const Fastify = require("fastify");
 const SQL = require("@nearform/sql");
 const mercuius = require("mercurius");
 const gqlSchmea = require("./gql-schema");
+const FamilyDataLoader = require("./data-loaders/family");
 
 const resolvers = {
   Query: {
     family: async function familyFunc(_parent, args, context, _info) {
-      context.reply.log.info("TODO is business logic");
-      // return {
-      //   id: 62,
-      //   name: "Demo",
-      // };
-
-      const sql = SQL`SELECT * FROM Family WHERE id = ${args.id}`;
-      const familyData = context.app.sqlite.get(sql);
-      context.reply.log.debug({ familyData }, "Read family data");
-
-      return familyData;
+      return context.familyDL.load(args.id);
     },
     person: async function personFunc(_parent, args, context, info) {
       context.reply.log.info("Find person");
@@ -68,9 +59,7 @@ const resolvers = {
       return parent.nick;
     },
     fullName: async function fullName(parent, args, context, info) {
-      const sql = SQL`SELECT * FROM Family WHERE id = ${parent.familyId}`;
-      const familyData = await context.app.sqlite.get(sql);
-
+      const familyData = await context.familyDL.load(parent.familyId);
       return `${parent.name} ${familyData.name}`;
     },
     friends: async function friendsFunc(parent, args, context, info) {
@@ -79,8 +68,7 @@ const resolvers = {
       return friendData;
     },
     family: async function familyFunc(parent, args, context, info) {
-      const sql = SQL`SELECT * FROM Family WHERE id = ${parent.familyId}`;
-      const familyData = await context.app.sqlite.get(sql);
+      const familyData = await context.familyDL.load(parent.familyId);
       return familyData;
     },
   },
@@ -101,6 +89,12 @@ async function run() {
   app.register(mercuius, {
     schema: gqlSchmea,
     graphiql: true,
+    context: async function (request, reply) {
+      const familyDL = FamilyDataLoader(app);
+      return {
+        familyDL,
+      };
+    },
     resolvers,
   });
 
