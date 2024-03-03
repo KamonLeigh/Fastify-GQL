@@ -43,9 +43,11 @@ const resolvers = {
     },
     addToFamily: async function addToFamily(parent, args, context, info) {
       const sql = SQL`INSERT INTO Person (familyId, name, nick) VALUES(${args.id}, ${args.name}, ${args.nickName})`;
-      const { lastID, change } = await context.app.sqlite.run(sql);
+      const { lastID, changes } = await context.app.sqlite.run(sql);
 
-      console.log(change);
+      if (changes === 0 || changes === undefined) {
+        throw new Error("Unable to inser new Person");
+      }
 
       const sqlTwo = SQL`SELECT * FROM Person WHERE id = ${lastID}`;
       const person = context.app.sqlite.get(sqlTwo);
