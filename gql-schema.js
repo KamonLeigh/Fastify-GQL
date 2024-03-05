@@ -17,10 +17,12 @@ module.exports = `
 
   type Query {
     family(id: ID!): Family
+    person(id: ID!): Person
   }
 
   type Mutation {
    changeNickName(id: ID!, nickName: String!): Person
+   addToFamily(id: ID!, nickName: String, name: String!): Person
   }
 
   type Subscription {
