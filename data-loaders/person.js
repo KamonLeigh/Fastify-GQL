@@ -7,9 +7,15 @@ module.exports = function builderDataLoader(app) {
       const secureIds = ids.map((id) => SQL`${id}`);
       const sql = SQL`SELECT * FROM person WHERE id IN (${SQL.glue(secureIds, ",")})
         `;
+      const personData = await app.sqlite.all(sql);
+      return ids.map((id) =>
+        personData.find((p) => `${p.personId}` === `${id}`),
+      );
     },
     {
       cacheKeyFn: (key) => `${key}`,
     },
   );
+
+  return dl;
 };
