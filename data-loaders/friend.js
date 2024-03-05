@@ -11,7 +11,6 @@ module.exports = function builderDataLoader(app) {
       const result = ids.map((id) =>
         friendData.filter((f) => `${f.personId}` === `${id}`),
       );
-      console.log("xxx", result);
       return result;
     },
     {
