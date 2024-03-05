@@ -3,6 +3,9 @@ const SQL = require("@nearform/sql");
 const mercuius = require("mercurius");
 const gqlSchmea = require("./gql-schema");
 const FamilyDataLoader = require("./data-loaders/family");
+const PersonByFamilyDataLoader = require("./data-loaders/person-by-familyId");
+const FriendDataLoader = require("./data-loaders/friend");
+const PersonDataLoader = require("./data-loaders/person");
 
 const resolvers = {
   Query: {
@@ -49,8 +52,7 @@ const resolvers = {
   },
   Family: {
     members: async function membersFunc(parent, args, context, info) {
-      const sql = SQL`SELECT * FROM Person WHERE familyId = ${parent.id}`;
-      const membersData = context.app.sqlite.all(sql);
+      const membersData = await context.personByFamilyDL.load(parent.id);
       return membersData;
     },
   },
@@ -64,8 +66,11 @@ const resolvers = {
     },
     friends: async function friendsFunc(parent, args, context, info) {
       const sql = SQL`SELECT * FROM Person WHERE id IN (SELECT friendId FROM Friend WHERE personId = ${parent.id})`;
-      const friendData = await context.app.sqlite.all(sql);
-      return friendData;
+      const friendsData = await context.friendDL.load(parent.id);
+      const personData = await context.personDL.loadMany(
+        friendsData.map((friend) => friend.personId),
+      );
+      return personData;
     },
     family: async function familyFunc(parent, args, context, info) {
       const familyData = await context.familyDL.load(parent.familyId);
@@ -91,8 +96,14 @@ async function run() {
     graphiql: true,
     context: async function (request, reply) {
       const familyDL = FamilyDataLoader(app);
+      const personByFamilyDL = PersonByFamilyDataLoader(app);
+      const friendDL = FriendDataLoader(app);
+      const personDL = PersonDataLoader(app);
       return {
         familyDL,
+        personByFamilyDL,
+        friendDL,
+        personDL,
       };
     },
     resolvers,
