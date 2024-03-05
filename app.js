@@ -14,8 +14,7 @@ const resolvers = {
     },
     person: async function personFunc(_parent, args, context, info) {
       context.reply.log.info("Find person");
-      const sql = SQL`SELECT * FROM Person WHERE id = ${args.id}`;
-      const person = context.app.sqlite.get(sql);
+      const person = await context.personDL.load(args.id);
 
       return person;
     },
@@ -65,10 +64,10 @@ const resolvers = {
       return `${parent.name} ${familyData.name}`;
     },
     friends: async function friendsFunc(parent, args, context, info) {
-      const sql = SQL`SELECT * FROM Person WHERE id IN (SELECT friendId FROM Friend WHERE personId = ${parent.id})`;
+      //const sql = SQL`SELECT * FROM Person WHERE id IN (SELECT friendId FROM Friend WHERE personId = ${parent.id})`;
       const friendsData = await context.friendDL.load(parent.id);
       const personData = await context.personDL.loadMany(
-        friendsData.map((friend) => friend.personId),
+        friendsData.map((friend) => friend.friendId),
       );
       return personData;
     },
