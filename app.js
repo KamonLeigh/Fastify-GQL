@@ -1,6 +1,6 @@
 const Fastify = require("fastify");
 const SQL = require("@nearform/sql");
-const mercuius = require("mercurius");
+const mercurius = require("mercurius");
 const gqlSchmea = require("./gql-schema");
 const FamilyDataLoader = require("./data-loaders/family");
 const PersonByFamilyDataLoader = require("./data-loaders/person-by-familyId");
@@ -14,7 +14,7 @@ const resolvers = {
       const familyData = await context.familyDL.load(args.id);
       if (!familyData) {
         // throw new Error(`Family id: ${args.id} not found`)
-        throw new mercuius.ErrorWithProps(`Family id: ${args.id} not found`, {
+        throw new mercurius.ErrorWithProps(`Family id: ${args.id} not found`, {
           ERR_CODE: 404,
         });
       }
@@ -24,7 +24,7 @@ const resolvers = {
       context.reply.log.info("Find person");
       const person = await context.personDL.load(args.id);
       if (!person) {
-        throw new mercuius.ErrorWithProps(`Person id: ${args.id} not found`, {
+        throw new mercurius.ErrorWithProps(`Person id: ${args.id} not found`, {
           ERR_CODE: 404,
         });
       }
@@ -38,7 +38,7 @@ const resolvers = {
       const { change } = context.app.sqlite.run(sql);
 
       if (change === 0) {
-        throw new Error("error in updating person");
+        throw new mercurius.ErrorWithProps(`Person id ${args.id} not found`);
       }
 
       const sqlTwo = SQL`SELECT * FROM Person WHERE id = ${args.id}`;
@@ -103,12 +103,12 @@ async function run() {
     migrationPath: "migrations/",
   });
 
-  app.register(mercuius, {
+  app.register(mercurius, {
     schema: gqlSchmea,
     graphiql: true,
     errorFormatter: (result, context) => {
       result.errors = result.errors.map(hideSensitiveData);
-      return mercuius.defaultErrorFormatter(result, context);
+      return mercurius.defaultErrorFormatter(result, context);
     },
     context: async function (request, reply) {
       const familyDL = FamilyDataLoader(app);
