@@ -10,11 +10,24 @@ const PersonDataLoader = require("./data-loaders/person");
 const resolvers = {
   Query: {
     family: async function familyFunc(_parent, args, context, _info) {
-      return context.familyDL.load(args.id);
+      context.reply.log.info("Find family");
+      const familyData = await context.familyDL.load(args.id);
+      if (!familyData) {
+        // throw new Error(`Family id: ${args.id} not found`)
+        throw new mercuius.ErrorWithProps(`Family id: ${args.id} not found`, {
+          ERR_CODE: 404,
+        });
+      }
+      return familyData;
     },
     person: async function personFunc(_parent, args, context, info) {
       context.reply.log.info("Find person");
       const person = await context.personDL.load(args.id);
+      if (!person) {
+        throw new mercuius.ErrorWithProps(`Person id: ${args.id} not found`, {
+          ERR_CODE: 404,
+        });
+      }
 
       return person;
     },
@@ -93,6 +106,10 @@ async function run() {
   app.register(mercuius, {
     schema: gqlSchmea,
     graphiql: true,
+    errorFormatter: (result, context) => {
+      result.errors = result.errors.map(hideSensitiveData);
+      return mercuius.defaultErrorFormatter(result, context);
+    },
     context: async function (request, reply) {
       const familyDL = FamilyDataLoader(app);
       const personByFamilyDL = PersonByFamilyDataLoader(app);
@@ -107,6 +124,15 @@ async function run() {
     },
     resolvers,
   });
+
+  function hideSensitiveData(error) {
+    if (error.extensions) {
+      return error;
+    }
+
+    error.message = "Internal server error";
+    return error;
+  }
 
   await app.listen({ port: 3003 });
 }
